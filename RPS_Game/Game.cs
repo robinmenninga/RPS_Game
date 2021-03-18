@@ -7,26 +7,57 @@ namespace RPS_Game
 {
     class Game
     {
-        static void Main(string[] args)
+        static readonly List<string> rockWords = new List<string>() { "rock", "r", "1", "stone" };
+        static readonly List<string> paperWords = new List<string>() { "paper", "p", "2", "sheet" };
+        static readonly List<string> scissorsWords = new List<string>() { "scissors", "s", "3", "cut" };
+        static readonly List<string> yesWords = new List<string>() { "yes", "y", "true", "ye" };
+        static readonly List<string> noWords = new List<string>() { "no", "n", "nah", "non" };
+
+        static string playerName;
+        static string computerName;
+
+        static int playerPoints = 0;
+        static int computerPoints = 0;
+        static void Main()
         {
-            
-            Console.WriteLine("Starting game...");
+            bool stop = false;
             List<string> names = AskNames();
-            string playerName = names[0];
-            string computerName = names[1];
+            playerName = names[0];
+            computerName = names[1];
+            
+            while (!stop)
+            {
+                PlayGame();
+                Console.WriteLine("Play again?");
+                while (true)
+                {
+                    string answer = Console.ReadLine();
+                    if (yesWords.Contains(answer))
+                    {
+                        Console.Clear();
+                        break;
+                    }
+                    if (noWords.Contains(answer))
+                    {
+                        Console.WriteLine("Quitting...");
+                        stop = true;
+                        break;
+                    }
+                    Console.WriteLine("Answer not recognized, please try again.");
+                }
+            }
+        }
+
+        private static void PlayGame()
+        {
             string playerWeapon = AskWeapon();
             string computerWeapon = RandomWeapon();
             Console.Write(computerName + " chooses");
-            Console.Write(".");
-            Thread.Sleep(500);
-            Console.Write(".");
-            Thread.Sleep(500);
-            Console.Write(".");
-            Thread.Sleep(500);
-            Console.WriteLine(computerWeapon + "!");
+            WriteDots(3);
+            Console.WriteLine(" " + computerWeapon + "!");
             Thread.Sleep(1000);
             string winner = CalcWinner(playerWeapon, computerWeapon);
-            AnnounceWinner(playerName, computerName, winner);
+            AnnounceWinner(winner);
         }
 
         private static string AskWeapon()
@@ -35,11 +66,11 @@ namespace RPS_Game
             while (true)
             {
                 String input = Console.ReadLine().ToLower();
-                if (input == "rock" || input == "r" || input == "1")
+                if (rockWords.Contains(input))
                     return "Rock";
-                if (input == "paper" || input == "p" || input == "2")
+                if (paperWords.Contains(input))
                     return "Paper";
-                if (input == "scissors" || input == "s" || input == "3")
+                if (scissorsWords.Contains(input))
                     return "Scissors";
                 Console.WriteLine("Answer not recognized, please try again.");
             }
@@ -48,15 +79,15 @@ namespace RPS_Game
         private static string RandomWeapon()
         {
             int randomint = new Random().Next(3);
-            switch (randomint)
+            return randomint switch
             {
-                case 0: return "Rock";
-                case 1: return "Paper";
-                case 2: return "Scissors";
+                0 => "Rock",
+                1 => "Paper",
+                2 => "Scissors",
 
-                //Shouldn't be possible, but visual studio wouldn't let me compile without it :-)
-                default: return "RPG";
-            }
+                //Shouldn't be possible, but visual studio is complaining that it could happen :|
+                _ => "RPG",
+            };
         }
 
         private static string CalcWinner(string playerWeapon, string computerWeapon)
@@ -108,7 +139,6 @@ namespace RPS_Game
 
         private static string RandomName()
         {
-            //hacky way of getting the name from json, but hey, it works.
             RestClient client = new RestClient("https://randomuser.me/api/");
             string jsonData = client.Get(new RestRequest("", DataFormat.Json)).Content;
             if (jsonData == "")
@@ -116,20 +146,45 @@ namespace RPS_Game
                 Console.WriteLine("Couldn't get a random name.");
                 return "CPU";
             }
-                
-            string name = jsonData.Substring(jsonData.IndexOf("first") + 8);
+
+            //hacky way of getting the name from json, but hey, it works.    
+            //string name = jsonData.Substring(jsonData.IndexOf("first") + 8);
+            string name = jsonData[(jsonData.IndexOf("first") + 8)..];
             return name.Substring(0, name.IndexOf("\""));
         }
 
-        private static void AnnounceWinner(String playerName, String computerName, String winner)
+        private static void AnnounceWinner(String winner)
         {
             if (winner == "Player")
+            {
                 Console.WriteLine("The winner is " + playerName + "!");
+                playerPoints++;
+            }
             if (winner == "Computer")
+            {
                 Console.WriteLine("The winner is " + computerName + "!");
+                computerPoints++;
+            }
             if (winner == "Stalemate")
                 Console.WriteLine("Stalemate!");
+
+            PrintScoreboard();
         }
 
+        private static void PrintScoreboard()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Scoreboard");
+            Console.WriteLine(playerName + ": " + playerPoints);
+            Console.WriteLine(computerName + ": " + computerPoints);
+        }
+        public static void WriteDots(int amount)
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                Console.Write(".");
+                Thread.Sleep(500);
+            }
+        }
     }
 }
